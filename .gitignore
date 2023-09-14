@@ -1,0 +1,4 @@
+#Directories ignored
+dist/
+build/
+siesta_tools.egg-info
