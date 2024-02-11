@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     author      = "Dr. Raúl Guerrero",
     description = "Set of packages oriented to improve Density Functional Theory Analysis and manipulation of geometries.",
-    long_description_content_type='text/markdown'
+    long_description_content_type='text/markdown',
     name        = "siesta_tools",
     version     = '0.1.4',
     packages    = find_packages(include=["utilities","utilities.*","electronic_utils","electronic_utils*","ASE2pandas","filemanipulation","findfiles","geometry_utils","interatomicsticks"]),
