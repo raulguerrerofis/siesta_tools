@@ -6,7 +6,7 @@ I did this package to create a modern source of tools for SIESTA calculations. I
 
 ## Instalation
 
-You can install this package by doing
+You can install this package as follows
 
 ```markdown
     cd siesta_tools

@@ -2,7 +2,7 @@ from ase.io import read
 import pandas as pd
 import numpy as np
 
-def geom2siesta(filepath,outfilename,sort=False,pdheader=True):
+def geom2siesta(filepath=str, outfilename=str, sort=False,pdheader=False,inputextention='.XV',withextension=False):
     """This function creates a siesta file from many other formats by using ASE.
     You can use the %include tag from siesta or directly copy the result in the main *fdf file
 
@@ -29,11 +29,20 @@ def geom2siesta(filepath,outfilename,sort=False,pdheader=True):
     and a dataframe with the cell readed, i.e., (geometry_df, cell_df)
    
     """
-    system = read(filepath)
-    uniquechem = np.unique(system.get_chemical_symbols())
-    indexlist  = dict(zip(uniquechem,list(range(1,len (uniquechem)+1))))
+    system = type(filepath)
+    
+    if  type(filepath) is str:
+        print('opening from path')
+        system         = read(filepath)
+    else:
+        print('opening from ASE geometry')
+        system = filepath
+        
+        
+    uniquechem     = np.unique(system.get_chemical_symbols())
+    indexlist      = dict(zip(uniquechem,list(range(1,len (uniquechem)+1))))
 
-    realindex= [int(j) for n, (p,c) in enumerate(zip(system.get_positions(),system.get_chemical_symbols()),1) for i,j in indexlist.items() if c == i]
+    realindex      = [int(j) for n, (p,c) in enumerate(zip(system.get_positions(),system.get_chemical_symbols()),1) for i,j in indexlist.items() if c == i]
 
     char1          = '#,'*len(realindex)
     char1          = char1.split(',')
@@ -45,20 +54,22 @@ def geom2siesta(filepath,outfilename,sort=False,pdheader=True):
     df['comment']  = char1[:-1]
     df['symbol']   = system.get_chemical_symbols()
     
-    # display(data1.head(20))
-    
     if sort==True:
         df['old_atm_num'] = np.arange(1,len(realindex)+1)
         df = df.sort_values( by = 'symbol')
         df['new_atm_num'] = np.arange(1,len(realindex)+1)
     else:
-        df['atm_num'] = np.arange(1,len(realindex)+1)
-    # [print('{:3.6f}   {:3.6f}    {:3.6f} '.format(system.get_cell()[i][0],system.get_cell()[i][1],system.get_cell()[i][2])) for i in range(3)]
-   
-    # display(data1.head(20))
-    filepath = '/'.join(filepath.split('/')[:-1])+'/'
-    print(filepath)
-    outfilepath = filepath+outfilename+'.fdf'
+        df['atm_num']     = np.arange(1,len(realindex)+1)
+    # filepath    = '/'.join(filepath.split('/')[:-1])+'/'
+    print('ORIGINAL FILE FROM: ',filepath)
+    outfilename = outfilename.replace('.'+inputextention,'_geom')
+    
+    # outfilepath = filepath+outfilename+'.fdf'
+    
+    if withextension == True:
+        outfilepath = outfilename+'.fdf'
+    else:
+        outfilepath = outfilename
     with open(outfilepath,'w') as ff:
         if pdheader == True:
             ff.write('#')
@@ -71,9 +82,27 @@ def geom2siesta(filepath,outfilename,sort=False,pdheader=True):
         ff.write('\n%endblock AtomicCoordinatesAndAtomicSpecies\n')
         
     with open(outfilepath,'a') as outfile:
+        
+        kindofdata ='\nAtomicCoordinatesFormat                  Ang\n' 
+                                    #  - NotScaledCartesianBohr
+                                    #  - NotScaledCartesianAng
+                                    #  - ScaledCartesian
+                                    #  - ScaledByLatticeVectors'
+        outfile.write(kindofdata)
+        
+        
+        Nofatoms = '\nNumberOfAtoms  {}\n'.format(int(len(df)))
+        
+        outfile.write(Nofatoms)
+        Nofspecies = '\nNumberOfSpecies {}\n'.format(int(len(df['symbol'].unique())))
+        
+        outfile.write(Nofspecies)
+        
+
+        outfile.write('\nLatticeConstant   1.00   Ang  \n')
         outfile.write('\n%block LatticeVectors\n')
         dfcell = pd.DataFrame(system.get_cell(),columns=['a1','a2','a3'])
         llc = dfcell.to_string(header=False, index=False, justify='right', col_space=5)
         outfile.write(llc)
         outfile.write('\n%endblock LatticeVectors\n')
-    return (df,dfcell)
+    return print('SIESTA formated file at: {}'.format(outfilepath))#(df,dfcell)

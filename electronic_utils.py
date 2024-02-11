@@ -2,28 +2,31 @@ import numpy as np
 import sisl
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
 
 def plot_bands(folder, annot=False,shifted=True):
     """
+
     Parameters
     ----------
     folder :
         The path of the siesta calculation folder (Not the *bands file)
     annot :
-         (Default value = False)
+        (Default value = False)
         Allows to plot an extra plot showing the indexes of the band.
     fig :
-         (Default value = fig)
+        (Default value = fig)
         Figure related with the plot.
     ax :
-         (Default value = ax)
-         Axis of the plot.
+        (Default value = ax)
+        Axis of the plot.
     shifted :
-         (Default value = True)
-        Allows to shift the Fermi level to the original in the calculation and plot the bands.
+        (Default value = True)
+
     Returns
     -------
-    band structure
+
+    
     """
     
     bandfile = '' # this line is just to avoid unound variable in python
@@ -98,3 +101,43 @@ def plot_bands(folder, annot=False,shifted=True):
         [ax.annotate('{}'.format(i+1),(kpbands[kkk], banda_siesta[kkk,1,i]+eF),rotation=0,color='red' )  for i in range(   len(banda_siesta[:,1,:])        )];
         [ax.annotate('{}'.format(i+1),(kpbands[kkk], banda_siesta[kkk,0,i]+eF),rotation=0,color='blue' ,alpha=0.5) for i in range(   len(banda_siesta[:,0,:])        )];
         fig.savefig(bandfile[:-6]+'Bands_annot.png',format='png',dpi=200)
+        
+        
+        
+def pop_reader(pop_file):
+    """
+
+    Parameters
+    ----------
+    pop_file :
+        path of the siesta_out file that contains the population
+
+    Returns
+    -------
+    Returns a Pandas dataframe with the whole charges and atomic species
+
+    """
+    with open(pop_file,'r') as infile:
+        lines=infile.readlines()
+    for n, i in enumerate(lines):
+        if 'Hirshfeld Net Atomic Populations' in i:
+
+            break
+    for m, i in enumerate(lines[n:]):
+        i = i.split()
+        if len(i) ==0 :
+            break
+    atom   = [int(i.split()[0])  for i in lines[n+2:n+m]]
+    charge = [float(i.split()[1])  for i in lines[n+2:n+m]]
+    species = [str(i.split()[2])  for i in lines[n+2:n+m]]
+    colnames = lines[n+1].replace('#','').split()
+    
+    try:
+        df_hirsh  = pd.DataFrame(columns=colnames)
+        df_hirsh[colnames[0]] = atom
+        df_hirsh[colnames[1]] = charge
+        df_hirsh[colnames[2]] = species
+        return df_hirsh
+    except:
+        return 0
+        pass
